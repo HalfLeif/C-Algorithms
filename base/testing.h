@@ -21,6 +21,16 @@ if(expr && Fail()) LOG(ERROR) << "Assertion failed! "
 
 #define ASSERT_TRUE(expr) ASSERT_FALSE(!expr)
 
+#define ASSERT_BIN_OP(a, b, oper) ASSERT_TRUE( (a oper b) ) << \
+"Expected " << #a << " " << #oper << " " << #b << " but found " << a << " vs " << b << " "
+
+#define ASSERT_EQ(a, b) ASSERT_BIN_OP(a, b, ==)
+#define ASSERT_NE(a, b) ASSERT_BIN_OP(a, b, !=)
+#define ASSERT_LT(a, b) ASSERT_BIN_OP(a, b, <)
+#define ASSERT_LE(a, b) ASSERT_BIN_OP(a, b, <=)
+#define ASSERT_GT(a, b) ASSERT_BIN_OP(a, b, >)
+#define ASSERT_GE(a, b) ASSERT_BIN_OP(a, b, >=)
+
 #define TEST(classname) \
 class classname##Test : public testing::UnitTest { \
  public: \
