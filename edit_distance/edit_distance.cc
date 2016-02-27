@@ -4,10 +4,6 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include "../base/logging.h"
-#include <iostream>
-#include <string>
-
 // Assumes all strings are null terminated
 namespace strings {
 struct PairHasher {
