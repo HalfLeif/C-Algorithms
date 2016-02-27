@@ -1,5 +1,7 @@
 // Representing graphs
 //
+// Works for both weighted, unweighted graphs as well as both directed and undirected graphs.
+//
 // Example:
 // auto builder = graph::GraphBuilder<const my::Node*>::DirectedGraph();
 // auto graph = builder.AddEdge(a, b).AddEdge(b, c).Build();
@@ -32,10 +34,13 @@ template <typename NodeId>
 class GraphBuilder;
 
 template <typename NodeId = std::string>
+// All Get/Has-operations are in average O(1).
 class Graph {
  public:
   const Edge* GetEdge(const NodeId& from, const NodeId& to) const;
   const std::unordered_set<NodeId>* GetNeighbours(const NodeId& id) const;
+
+  const std::unordered_map<NodeId, std::unordered_set<NodeId>>& Nodes() const { return neighbours_; }
 
   bool HasNode(const NodeId& id) const {
     return GetNeighbours(id) != nullptr;
@@ -67,7 +72,7 @@ class GraphBuilder {
   GraphBuilder& AddEdge(const NodeId& from, const NodeId& to, Edge e);
 
   inline GraphBuilder& AddEdge(const NodeId& from, const NodeId& to) {
-    return AddEdge(from, to, Edge());
+    return AddEdge(from, to, Edge(1));
   }
   Graph<NodeId> Build() { return std::move(g_); }
 
