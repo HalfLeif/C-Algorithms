@@ -17,9 +17,9 @@
 
 
 #define ASSERT_FALSE(expr) \
-if(expr && Fail()) LOG(ERROR) << "Assertion failed! "
+if((expr) && Fail()) LOG(ERROR) << "Assertion failed! "
 
-#define ASSERT_TRUE(expr) ASSERT_FALSE(!expr)
+#define ASSERT_TRUE(expr) ASSERT_FALSE(!(expr))
 
 #define ASSERT_BIN_OP(a, b, oper) ASSERT_TRUE( (a oper b) ) << \
 "Expected " << #a << " " << #oper << " " << #b << " but found " << a << " vs " << b << " "
