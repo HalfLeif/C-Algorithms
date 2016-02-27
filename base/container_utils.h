@@ -1,6 +1,8 @@
 #ifndef CONTAINER_UTILS_H
 #define CONTAINER_UTILS_H
 
+namespace util {
+
 template <typename A, typename B>
 struct PairHasher {
  public:
@@ -26,5 +28,7 @@ bool ContainsInElem(const OuterContainer& sets, const T& key) {
   }
   return false;
 }
+
+}  // util
 
 #endif

@@ -62,7 +62,7 @@ class Graph {
   const bool directed_;
   std::unordered_map<NodeId, std::unordered_set<NodeId>> neighbours_;
   std::unordered_map<NodeId, std::unordered_set<NodeId>> incoming_;
-  std::unordered_map<std::pair<NodeId, NodeId>, Edge, PairHasher<NodeId, NodeId>> edges_;
+  std::unordered_map<std::pair<NodeId, NodeId>, Edge, util::PairHasher<NodeId, NodeId>> edges_;
 
   friend class GraphBuilder<NodeId>;
 };
@@ -96,7 +96,7 @@ class GraphBuilder {
 template <typename NodeId>
 const Edge* Graph<NodeId>::GetEdge(const NodeId& from, const NodeId& to) const {
   std::pair<NodeId, NodeId> pair = std::make_pair(from, to);
-  if (ContainsKey(edges_, pair)) {
+  if (util::ContainsKey(edges_, pair)) {
     return &edges_.at(pair);
   }
   return nullptr;
@@ -104,7 +104,7 @@ const Edge* Graph<NodeId>::GetEdge(const NodeId& from, const NodeId& to) const {
 
 template <typename NodeId>
 const std::unordered_set<NodeId>* Graph<NodeId>::GetNeighbours(const NodeId& id) const {
-  if (ContainsKey(neighbours_, id)) {
+  if (util::ContainsKey(neighbours_, id)) {
     return &neighbours_.at(id);
   }
   return nullptr;
@@ -112,7 +112,7 @@ const std::unordered_set<NodeId>* Graph<NodeId>::GetNeighbours(const NodeId& id)
 
 template <typename NodeId>
 const std::unordered_set<NodeId>* Graph<NodeId>::GetIncoming(const NodeId& id) const {
-  if (ContainsKey(incoming_, id)) {
+  if (util::ContainsKey(incoming_, id)) {
     return &incoming_.at(id);
   }
   return nullptr;
