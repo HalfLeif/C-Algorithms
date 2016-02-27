@@ -11,6 +11,21 @@
 #define COLOR_GREEN "\033[1;32m"
 #define COLOR_RESET "\033[0m"
 
+template <typename T>
+std::ostream& operator<<(std::ostream& stream, const std::vector<T>& items) {
+  stream << "{";
+  bool first = true;
+  for (const T& item : items) {
+    if (first) {
+      first = false;
+    } else {
+      stream << ", ";
+    }
+    stream << item;
+  }
+  return stream << "}";
+}
+
 class Logger {
  public:
   ~Logger() {

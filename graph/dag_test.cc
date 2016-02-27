@@ -9,7 +9,9 @@ TEST(basic_dag) {
   auto graph =
       GraphBuilder<std::string>::DirectedGraph()
       .AddEdge("start", "a").AddEdge("start", "b").AddEdge("b", "c").Build();
-  ASSERT_TRUE(IsDag(graph));
+ Graph<std::string>::Path p;
+ ASSERT_TRUE(TopologicalSorting<std::string>(graph, &p));
+ ASSERT_EQ(4, p.size());
 }
 
 TEST(dag_cyclic) {
