@@ -14,22 +14,13 @@
 #include <unordered_set>
 #include <vector>
 
+#include "../base/container_utils.h"
+
 namespace graph {
 
 // Can change this to a class with Annotations and stuff, leave for now
 // Can also change to template argument or pointer type
 typedef int Edge;
-
-template <typename A, typename B>
-struct PairHasher {
- public:
-  size_t operator() (const std::pair<A, B>& pair) const {
-    return hash_a_(pair.first) + 32503 * hash_b_(pair.second);
-  }
- private:
-  std::hash<A> hash_a_;
-  std::hash<B> hash_b_;
-};
 
 template <typename NodeId>
 class GraphBuilder;
@@ -44,6 +35,7 @@ class Graph {
 
   const Edge* GetEdge(const NodeId& from, const NodeId& to) const;
   const std::unordered_set<NodeId>* GetNeighbours(const NodeId& id) const;
+  const std::unordered_set<NodeId>* GetIncoming(const NodeId& id) const;
 
   // Outgoing edges
   const std::unordered_map<NodeId, std::unordered_set<NodeId>>& Nodes() const { return neighbours_; }
@@ -101,11 +93,6 @@ class GraphBuilder {
 };
 
 // Implementation ----------------------------------------
-template <typename Container, typename Key>
-bool ContainsKey(const Container& container, const Key& key) {
-  return container.find(key) != container.end();
-}
-
 template <typename NodeId>
 const Edge* Graph<NodeId>::GetEdge(const NodeId& from, const NodeId& to) const {
   std::pair<NodeId, NodeId> pair = std::make_pair(from, to);
@@ -119,6 +106,14 @@ template <typename NodeId>
 const std::unordered_set<NodeId>* Graph<NodeId>::GetNeighbours(const NodeId& id) const {
   if (ContainsKey(neighbours_, id)) {
     return &neighbours_.at(id);
+  }
+  return nullptr;
+}
+
+template <typename NodeId>
+const std::unordered_set<NodeId>* Graph<NodeId>::GetIncoming(const NodeId& id) const {
+  if (ContainsKey(incoming_, id)) {
+    return &incoming_.at(id);
   }
   return nullptr;
 }
