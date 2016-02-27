@@ -10,6 +10,8 @@
 
 namespace graph {
 
+// Complexity: O(E) = O(d*V)
+// Implemented by topological sorting
 template <typename NodeId>
 bool IsDag(const Graph<NodeId>& graph);
 
@@ -17,22 +19,20 @@ bool IsDag(const Graph<NodeId>& graph);
 
 template <typename NodeId>
 bool IsDag(const Graph<NodeId>& graph) {
-  // Register all edges
-  std::unordered_map<NodeId, int> incoming_edges;
-  for (auto p : graph.Nodes()) {
-    for (const NodeId& neighbour : p.second) {
-      ++incoming_edges[neighbour];
-    }
+  if (!graph.IsDirected()) {
+    return false;
   }
+  auto incoming_edges = graph.Incoming();
 
-  // Register starting positions
+  // Register starting positions: O(V)
   std::queue<NodeId> queue;
-  for (auto p : graph.Nodes()) {
-    if (!ContainsKey(incoming_edges, p.first)) {
+  for (auto p : incoming_edges) {
+    if (p.second.size() == 0) {
       queue.push(p.first);
     }
   }
 
+  // Go through each Node in order of hierarchy: O(V)
   int nodes_in_dag = 0;
   while (!queue.empty()) {
     NodeId node = queue.front();
@@ -44,7 +44,8 @@ bool IsDag(const Graph<NodeId>& graph) {
       LOG(ERROR) << "Should never happen!!!";
     }
     for (NodeId neighbour : *neighbours) {
-      if (0 == --incoming_edges[neighbour]) {
+      incoming_edges[neighbour].erase(node);
+      if (0 == incoming_edges[neighbour].size()) {
         queue.push(neighbour);
       }
     }

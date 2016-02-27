@@ -12,6 +12,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace graph {
 
@@ -33,14 +34,27 @@ struct PairHasher {
 template <typename NodeId>
 class GraphBuilder;
 
-template <typename NodeId = std::string>
 // All Get/Has-operations are in average O(1).
+template <typename NodeId = std::string>
 class Graph {
  public:
+  typedef std::vector<NodeId> Path;
+
+  bool IsDirected() const { return directed_; }
+
   const Edge* GetEdge(const NodeId& from, const NodeId& to) const;
   const std::unordered_set<NodeId>* GetNeighbours(const NodeId& id) const;
 
+  // Outgoing edges
   const std::unordered_map<NodeId, std::unordered_set<NodeId>>& Nodes() const { return neighbours_; }
+
+  // Incoming edges
+  const std::unordered_map<NodeId, std::unordered_set<NodeId>>& Incoming() const {
+    if (directed_) {
+      return incoming_;
+    }
+    return neighbours_;
+  }
 
   bool HasNode(const NodeId& id) const {
     return GetNeighbours(id) != nullptr;
@@ -51,14 +65,17 @@ class Graph {
   }
 
  private:
-  Graph() {}
+  Graph(bool directed) : directed_(directed) {}
 
+  const bool directed_;
   std::unordered_map<NodeId, std::unordered_set<NodeId>> neighbours_;
+  std::unordered_map<NodeId, std::unordered_set<NodeId>> incoming_;
   std::unordered_map<std::pair<NodeId, NodeId>, Edge, PairHasher<NodeId, NodeId>> edges_;
 
   friend class GraphBuilder<NodeId>;
 };
 
+// Building the graph: O(E)
 template <typename NodeId = std::string>
 class GraphBuilder {
  public:
@@ -69,6 +86,7 @@ class GraphBuilder {
     return GraphBuilder(true);
   }
 
+  // O(1)
   GraphBuilder& AddEdge(const NodeId& from, const NodeId& to, Edge e);
 
   inline GraphBuilder& AddEdge(const NodeId& from, const NodeId& to) {
@@ -77,9 +95,8 @@ class GraphBuilder {
   Graph<NodeId> Build() { return std::move(g_); }
 
  private:
-  GraphBuilder(bool directed) : directed_(directed) {}
+  GraphBuilder(bool directed) : g_(directed) {}
 
-  const bool directed_;
   Graph<NodeId> g_;
 };
 
@@ -108,18 +125,15 @@ const std::unordered_set<NodeId>* Graph<NodeId>::GetNeighbours(const NodeId& id)
 
 template <typename NodeId>
 GraphBuilder<NodeId>& GraphBuilder<NodeId>::AddEdge(const NodeId& from, const NodeId& to, Edge e) {
-  if (!g_.HasNode(from)) {
-    g_.neighbours_[from] = {to};
-  } else {
-    g_.neighbours_[from].insert(to);
-  }
+  g_.neighbours_[from].insert(to);
+  g_.neighbours_[to];
 
-  if (!g_.HasNode(to)) {
-    g_.neighbours_[to] = {};
-  }
   g_.edges_[std::make_pair(from, to)] = e;
 
-  if (!directed_) {
+  if (g_.IsDirected()) {
+    g_.incoming_[to].insert(from);
+    g_.incoming_[from];
+  } else {
     g_.neighbours_[to].insert(from);
     g_.edges_[std::make_pair(to, from)] = e;
   }

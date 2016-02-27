@@ -8,6 +8,8 @@ TEST(directed_graph_test) {
   graph::GraphBuilder<std::string> builder = graph::GraphBuilder<std::string>::DirectedGraph();
   const graph::Graph<std::string> g = builder.AddEdge("a", "b").Build();
 
+  ASSERT_TRUE(g.IsDirected());
+
   ASSERT_TRUE(g.HasNode("a"));
   ASSERT_TRUE(g.HasNode("b"));
   ASSERT_FALSE(g.HasNode("x"));
@@ -20,6 +22,8 @@ TEST(directed_graph_test) {
 TEST(undirected_graph_test) {
   graph::GraphBuilder<std::string> builder = graph::GraphBuilder<std::string>::UndirectedGraph();
   const graph::Graph<std::string> g = builder.AddEdge("a", "b").Build();
+
+  ASSERT_FALSE(g.IsDirected());
 
   ASSERT_TRUE(g.HasNode("a"));
   ASSERT_TRUE(g.HasNode("b"));
