@@ -1,8 +1,13 @@
+// Logging
+//
+// Example:
+// LOG(ERROR) << "My int " << int;
+
 #ifndef LOGGING_H
 #define LOGGING_H
 
 #include <iostream>
-
+#include <vector>
 
 // LOG(ERROR) or LOG(INFO)
 #define LOG(stream) stream##_LOG() << "\r" << __FILE__ << ":" << __LINE__ << " "
