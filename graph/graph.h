@@ -56,6 +56,14 @@ class Graph {
     return GetEdge(from, to) != nullptr;
   }
 
+  // Returns any single node in the graph, or nullptr if the graph is empty
+  const NodeId* First() const {
+    if (neighbours_.empty()) {
+      return nullptr;
+    }
+    return &neighbours_.begin()->first;
+  }
+
  private:
   Graph(bool directed) : directed_(directed) {}
 
