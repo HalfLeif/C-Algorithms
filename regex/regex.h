@@ -2,7 +2,7 @@
 //
 // Currently only supports . and * operators, without escaping.
 //
-// TODO: increase supported regex features and partial matching
+// TODO: increase supported regex features and add partial matching
 #ifndef REGEX_H
 #define REGEX_H
 
@@ -44,7 +44,7 @@ class Regex {
  private:
   Regex() {};
 
-  // Currently without DP:
+  // Uses Dynamic programming to reduce search space.
   bool MatchesInternal(const char* input, const int current_state,
                        internal::VisitedSet* visited) const;
 
