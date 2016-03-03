@@ -60,4 +60,26 @@ TEST(regex_dot_star) {
   ASSERT_FALSE(regex.Matches("aca"));
 }
 
+// This was supposed to be a motivating test to use Dynamic programming,
+// the original version is very fast even without DP though...
+TEST(regex_expanding) {
+  bool failed;
+  auto regex = RegexBuilder::Build(".*.*.*.*.*.*.*.*.*.*.*.*.*.*", &failed);
+  ASSERT_FALSE(failed);
+  ASSERT_TRUE(regex.Matches("aabbbcasiduuiqgdkaushdmvquwyfdahgsdvmnbasvdqwfjudfahgsdvmbvqkywd"));
+}
+
+TEST(regex_build_failure) {
+  {
+    bool failed = false;
+    auto regex = RegexBuilder::Build("*", &failed);
+    ASSERT_TRUE(failed);
+  }
+  {
+    bool failed = false;
+    auto regex = RegexBuilder::Build("a**", &failed);
+    ASSERT_TRUE(failed);
+  }
+}
+
 }  // namespace regex

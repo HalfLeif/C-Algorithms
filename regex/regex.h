@@ -2,13 +2,16 @@
 //
 // Currently only supports . and * operators, without escaping.
 //
-// TODO: use Dynamic programming memoization
 // TODO: increase supported regex features and partial matching
 #ifndef REGEX_H
 #define REGEX_H
 
 #include <string>
+#include <unordered_set>
 #include <vector>
+
+#include "../base/container_utils.h"
+
 
 namespace regex {
 namespace internal {
@@ -25,6 +28,10 @@ class Node {
   const char allowed_;
   bool recurrent_ = false;
 };
+
+typedef std::unordered_set<std::pair<const char*, int>,
+                           util::PairHasher<const char*, int>> VisitedSet;
+
 }  // namespace internal
 
 class RegexBuilder;
@@ -32,15 +39,14 @@ class RegexBuilder;
 class Regex {
  public:
   // Full match
-  bool Matches(const std::string& input) const {
-    return MatchesInternal(input.c_str(), 0);
-  }
+  bool Matches(const std::string& input) const;
 
  private:
   Regex() {};
-  
+
   // Currently without DP:
-  bool MatchesInternal(const char* input, const int current_state) const;
+  bool MatchesInternal(const char* input, const int current_state,
+                       internal::VisitedSet* visited) const;
 
   std::vector<internal::Node> nodes_;
   
@@ -49,14 +55,7 @@ class Regex {
 
 class RegexBuilder {
  public:
-  static Regex Build(const std::string& pattern, bool* failed) {
-    RegexBuilder builder;
-    for (char c : pattern) {
-      builder.Add(c);
-    }
-    *failed = builder.failed_;
-    return builder.out_;
-  }
+  static Regex Build(const std::string& pattern, bool* failed);
 
  private:
   RegexBuilder() {}
