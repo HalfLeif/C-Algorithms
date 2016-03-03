@@ -60,13 +60,14 @@ TEST(regex_dot_star) {
   ASSERT_FALSE(regex.Matches("aca"));
 }
 
-// This was supposed to be a motivating test to use Dynamic programming,
-// the original version is very fast even without DP though...
+// This use case shows why we need Dynamic programming,
+// since we have a branch factor of 2 for each recurrent node
+// for each char in the input.
 TEST(regex_expanding) {
   bool failed;
-  auto regex = RegexBuilder::Build(".*.*.*.*.*.*.*.*.*.*.*.*.*.*", &failed);
+  auto regex = RegexBuilder::Build(".*.*.*.*.*.*.*.*.*.*.*.*.*.*d", &failed);
   ASSERT_FALSE(failed);
-  ASSERT_TRUE(regex.Matches("aabbbcasiduuiqgdkaushdmvquwyfdahgsdvmnbasvdqwfjudfahgsdvmbvqkywd"));
+  ASSERT_FALSE(regex.Matches("aabbbcasiduuiqgdkaushdmvquwyfdahgsdvmnbasvdqwfjudfahgsdvmbvqkywd_"));
 }
 
 TEST(regex_build_failure) {
