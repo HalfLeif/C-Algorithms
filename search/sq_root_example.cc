@@ -48,7 +48,8 @@ uint SquareRoot(const uint x) {
   uint high = x/2;
 
   while (low <= high) {
-    uint mid = (low + high) / 2;
+    // Avoid overflow:
+    uint mid = low + (high - low) / 2;
     int is_found = IsRoot(mid, x);
     if (is_found == 0) {
       return mid;
