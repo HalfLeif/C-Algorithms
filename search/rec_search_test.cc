@@ -5,45 +5,45 @@
 
 namespace search {
 
-TEST(binarysearch_empty) {
+TEST(rec_binarysearch_empty) {
   std::vector<int> arr = {};
-  ASSERT_EQ(-1, BinarySearch(arr, 0));
+  ASSERT_EQ(-1, RecursiveBinarySearch(arr, 0));
 }
 
-TEST(binarysearch_notfound) {
+TEST(rec_binarysearch_notfound) {
   std::vector<int> arr = {1, 2, 3, 7};
-  ASSERT_EQ(-1, BinarySearch(arr, 0));
-  ASSERT_EQ(-1, BinarySearch(arr, 5));
-  ASSERT_EQ(-1, BinarySearch(arr, 8));
+  ASSERT_EQ(-1, RecursiveBinarySearch(arr, 0));
+  ASSERT_EQ(-1, RecursiveBinarySearch(arr, 5));
+  ASSERT_EQ(-1, RecursiveBinarySearch(arr, 8));
 }
 
-TEST(binarysearch_found_even) {
+TEST(rec_binarysearch_found_even) {
   std::vector<int> arr = {1, 2, 3, 4};
-  ASSERT_EQ(0, BinarySearch(arr, 1));
-  ASSERT_EQ(2, BinarySearch(arr, 3));
-  ASSERT_EQ(3, BinarySearch(arr, 4));
+  ASSERT_EQ(0, RecursiveBinarySearch(arr, 1));
+  ASSERT_EQ(2, RecursiveBinarySearch(arr, 3));
+  ASSERT_EQ(3, RecursiveBinarySearch(arr, 4));
 }
 
-TEST(binarysearch_found_odd) {
+TEST(rec_binarysearch_found_odd) {
   std::vector<int> arr = {1, 3, 4};
-  ASSERT_EQ(0, BinarySearch(arr, 1));
-  ASSERT_EQ(1, BinarySearch(arr, 3));
-  ASSERT_EQ(2, BinarySearch(arr, 4));
+  ASSERT_EQ(0, RecursiveBinarySearch(arr, 1));
+  ASSERT_EQ(1, RecursiveBinarySearch(arr, 3));
+  ASSERT_EQ(2, RecursiveBinarySearch(arr, 4));
 }
 
-TEST(binarysearch_found_duplicates) {
+TEST(rec_binarysearch_found_duplicates) {
   std::vector<int> arr = {1, 3, 3, 3, 3, 4};
-  ASSERT_LT(0, BinarySearch(arr, 3));
+  ASSERT_LT(0, RecursiveBinarySearch(arr, 3));
 }
 
-TEST(binarysearch_greater) {
+TEST(rec_binarysearch_greater) {
   std::vector<int> arr = {4, 3, 1};
   {
-    int ix = BinarySearch<int, std::greater<int>>(arr, 1);
+    int ix = RecursiveBinarySearch<int, std::greater<int>>(arr, 1);
     ASSERT_EQ(2, ix);
   }
   {
-    int ix = BinarySearch<int, std::greater<int>>(arr, 0);
+    int ix = RecursiveBinarySearch<int, std::greater<int>>(arr, 0);
     ASSERT_EQ(-1, ix);
   }
 }
@@ -70,7 +70,7 @@ struct TestEq {
   }
 };
 
-TEST(binarysearch_obj) {
+TEST(rec_binarysearch_obj) {
   std::vector<TestValue> arr;
   arr.emplace_back(0, 0);
   arr.emplace_back(0, 1);
@@ -83,11 +83,11 @@ TEST(binarysearch_obj) {
   arr.emplace_back(1, 3);
   arr.emplace_back(2, 3);
   {
-    int ix = BinarySearch<TestValue, TestComp, TestEq>(arr, TestValue(0, 1));
+    int ix = RecursiveBinarySearch<TestValue, TestComp, TestEq>(arr, TestValue(0, 1));
     ASSERT_EQ(1, ix);
   }
   {
-    int ix = BinarySearch<TestValue, TestComp, TestEq>(arr, TestValue(1, 8));
+    int ix = RecursiveBinarySearch<TestValue, TestComp, TestEq>(arr, TestValue(1, 8));
     ASSERT_EQ(-1, ix);
   }
 }
