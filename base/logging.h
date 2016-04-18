@@ -7,6 +7,7 @@
 #define LOGGING_H
 
 #include <iostream>
+#include <stdlib.h>
 #include <vector>
 
 // LOG(ERROR) or LOG(INFO)
@@ -15,6 +16,8 @@
 #define COLOR_RED "\033[1;31m"
 #define COLOR_GREEN "\033[1;32m"
 #define COLOR_RESET "\033[0m"
+
+#define CHECK(expr) if(!(expr)) LOG(FATAL)
 
 template <typename T>
 std::ostream& operator<<(std::ostream& stream, const std::vector<T>& items) {
@@ -33,8 +36,8 @@ std::ostream& operator<<(std::ostream& stream, const std::vector<T>& items) {
 
 class Logger {
  public:
-  ~Logger() {
-    *stream_ << COLOR_RESET << "\n";
+  virtual ~Logger() {
+    Reset();
   }
 
   template <typename T>
@@ -45,6 +48,10 @@ class Logger {
  protected:
   Logger(std::ostream* stream, const std::string& escape_sequence) : stream_(stream) {
     *stream_ << escape_sequence;
+  }
+
+  void Reset() {
+    *stream_ << COLOR_RESET << "\n";
   }
 
  private:
@@ -59,6 +66,14 @@ class ERROR_LOG : public Logger {
 class INFO_LOG : public Logger {
  public:
   INFO_LOG() : Logger(&std::cout, ""){}
+};
+
+class FATAL_LOG : public ERROR_LOG {
+ public:
+  ~FATAL_LOG() {
+    Reset();
+    exit(EXIT_FAILURE);
+  }
 };
 
 #endif
