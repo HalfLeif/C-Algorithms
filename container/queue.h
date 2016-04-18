@@ -23,8 +23,6 @@ class Queue {
   const T& front() const;
   const T& back() const;
 
-  void debug() const;
-
   // Reserves memory for this many elements and moves the elements there.
   // Ignores call if is smaller than current size or equal to current capacity.
   // Does not invalidate iterators.
@@ -123,10 +121,9 @@ void Queue<T>::reserve(const size_t new_capacity) {
   T* new_array = new T[new_capacity];
   if (!empty()) {
     size_t j = 0;
-    for (size_t i = next(back_); i != front_; ) {
+    for (size_t i = next(back_); i != front_; i = next(i)) {
       new_array[j] = std::move(array_[i]);
       ++j;
-      i = next(i);
     }
     CHECK(j == size_) << "j: " << j << " vs size_: " << size_;
   }
@@ -216,17 +213,5 @@ typename Queue<T>::const_iterator Queue<T>::end() const {
   return Queue<T>::const_iterator(size_, this);
 }
 
-template <typename T>
-void Queue<T>::debug() const {
-  auto& logger = LOG(INFO) << "Queue { \n\tsize: " << size_
-      << "\n\tcapacity: " << capacity_
-      << "\n\tback: " << back_
-      << "\n\tfront: " << front_
-      << "\n\tcontents: [";
-  for (int i = next(back_); i != front_; i = next(i)) {
-    logger << array_[i] << " ";
-  }
-  logger << "] \n}";
-}
 }  // namespace queue
 #endif
