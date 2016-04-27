@@ -41,36 +41,29 @@ std::vector<std::string> HuffmanCodes(const std::vector<float>& distribution) {
 
   // Vector of zeroes, will be used to represent our binary tree.
   std::vector<int> index_tree(tree_size, 0);
+  // Just an easy way to distinguish between left and right child.
   std::vector<bool> orientation(tree_size, false);
 
   // Queue of <weight, tree_index>. Queue should output smallest weight first.
   std::priority_queue<QueueElem, std::vector<QueueElem>, std::greater<QueueElem>> queue;
 
-  // Put weight of leaves at the end half of the vector
   // Insert all leaves into the queue
-  std::vector<float> weights(tree_size);
   for (size_t i = 0; i < book_size; ++i) {
-    weights[i + book_size] = distribution[i];
     queue.emplace(distribution[i], i + book_size);
   }
 
-  // Create a new parent node for the two trees with current smallest weight.
   size_t next_empty_node = book_size - 1;
   while(queue.size() > 1) {
+    // Create a new parent node for the two trees with current smallest weight.
     auto lower = queue.top();
     queue.pop();
     auto low = queue.top();
     queue.pop();
 
-    // Create parent node
     index_tree[lower.second] = next_empty_node;
     index_tree[low.second] = next_empty_node;
     orientation[lower.second] = true;
-
-    float parent_weight = lower.first + low.first;
-    weights[next_empty_node] = parent_weight;
-
-    queue.emplace(parent_weight, next_empty_node);
+    queue.emplace(lower.first + low.first, next_empty_node);
 
     // Should never happen because we insert one for every two we remove:
     CHECK(next_empty_node > 0);
@@ -80,6 +73,7 @@ std::vector<std::string> HuffmanCodes(const std::vector<float>& distribution) {
   return ConstructCodes(index_tree, orientation, book_size);
 }
 
+// Distribution of English letters in percentage.
 static const float kEnglishLetterDistribution[] = {
   8.167,   // a
   1.492,   // b
