@@ -9,6 +9,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <vector>
+#include <set>
 
 // LOG(ERROR) or LOG(INFO)
 #define LOG(stream) stream##_LOG() << "\r" << __FILE__ << ":" << __LINE__ << " "
@@ -19,8 +20,8 @@
 
 #define CHECK(expr) if(!(expr)) LOG(FATAL)
 
-template <typename T>
-std::ostream& operator<<(std::ostream& stream, const std::vector<T>& items) {
+template <typename Container, typename T>
+std::ostream& PrintContainer(std::ostream& stream, const Container& items) {
   stream << "{";
   bool first = true;
   for (const T& item : items) {
@@ -32,6 +33,16 @@ std::ostream& operator<<(std::ostream& stream, const std::vector<T>& items) {
     stream << item;
   }
   return stream << "}";
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream& stream, const std::vector<T>& items) {
+  return PrintContainer<std::vector<T>, T>(stream, items);
+}
+
+template <typename T>
+std::ostream& operator<<(std::ostream& stream, const std::set<T>& items) {
+  return PrintContainer<std::set<T>, T>(stream, items);
 }
 
 class Logger {

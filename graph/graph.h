@@ -11,7 +11,7 @@
 
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 #include "../base/container_utils.h"
@@ -20,7 +20,7 @@ namespace graph {
 
 // Can change this to a class with Annotations and stuff, leave for now
 // Can also change to template argument or pointer type
-typedef int Edge;
+typedef int EdgeWeight;
 
 template <typename NodeId>
 class GraphBuilder;
@@ -33,28 +33,31 @@ class Graph {
 
   bool IsDirected() const { return directed_; }
 
-  const Edge* GetEdge(const NodeId& from, const NodeId& to) const;
-  const std::unordered_set<NodeId>* GetNeighbours(const NodeId& id) const;
-  const std::unordered_set<NodeId>* GetIncoming(const NodeId& id) const;
+  const EdgeWeight* GetEdgeWeight(const NodeId& from, const NodeId& to) const;
+  const std::set<NodeId>* GetNeighbours(const NodeId& id) const;
+  const std::set<NodeId>* GetIncoming(const NodeId& id) const;
 
   // Outgoing edges
-  const std::unordered_map<NodeId, std::unordered_set<NodeId>>& Nodes() const { return neighbours_; }
+  const std::unordered_map<NodeId, std::set<NodeId>>& Nodes() const { return neighbours_; }
 
   // Incoming edges
-  const std::unordered_map<NodeId, std::unordered_set<NodeId>>& Incoming() const {
+  const std::unordered_map<NodeId, std::set<NodeId>>& Incoming() const {
     if (directed_) {
       return incoming_;
     }
     return neighbours_;
   }
 
-  bool HasNode(const NodeId& id) const {
+  inline bool HasNode(const NodeId& id) const {
     return GetNeighbours(id) != nullptr;
   }
 
-  bool HasEdge(const NodeId& from, const NodeId& to) const {
-    return GetEdge(from, to) != nullptr;
+  inline bool HasEdge(const NodeId& from, const NodeId& to) const {
+    return GetEdgeWeight(from, to) != nullptr;
   }
+
+  // Returns true iff the graph was changed
+  bool RemoveEdge(const NodeId& from, const NodeId& to);
 
   // Returns any single node in the graph, or nullptr if the graph is empty
   const NodeId* First() const {
@@ -68,9 +71,9 @@ class Graph {
   Graph(bool directed) : directed_(directed) {}
 
   const bool directed_;
-  std::unordered_map<NodeId, std::unordered_set<NodeId>> neighbours_;
-  std::unordered_map<NodeId, std::unordered_set<NodeId>> incoming_;
-  std::unordered_map<std::pair<NodeId, NodeId>, Edge, util::PairHasher<NodeId, NodeId>> edges_;
+  std::unordered_map<NodeId, std::set<NodeId>> neighbours_;
+  std::unordered_map<NodeId, std::set<NodeId>> incoming_;
+  std::unordered_map<std::pair<NodeId, NodeId>, EdgeWeight, util::PairHasher<NodeId, NodeId>> edges_;
 
   friend class GraphBuilder<NodeId>;
 };
@@ -87,10 +90,10 @@ class GraphBuilder {
   }
 
   // O(1)
-  GraphBuilder& AddEdge(const NodeId& from, const NodeId& to, Edge e);
+  GraphBuilder& AddEdge(const NodeId& from, const NodeId& to, EdgeWeight e);
 
   inline GraphBuilder& AddEdge(const NodeId& from, const NodeId& to) {
-    return AddEdge(from, to, Edge(1));
+    return AddEdge(from, to, EdgeWeight(1));
   }
   Graph<NodeId> Build() { return std::move(g_); }
 
@@ -102,7 +105,7 @@ class GraphBuilder {
 
 // Implementation ----------------------------------------
 template <typename NodeId>
-const Edge* Graph<NodeId>::GetEdge(const NodeId& from, const NodeId& to) const {
+const EdgeWeight* Graph<NodeId>::GetEdgeWeight(const NodeId& from, const NodeId& to) const {
   std::pair<NodeId, NodeId> pair = std::make_pair(from, to);
   if (util::ContainsKey(edges_, pair)) {
     return &edges_.at(pair);
@@ -111,7 +114,7 @@ const Edge* Graph<NodeId>::GetEdge(const NodeId& from, const NodeId& to) const {
 }
 
 template <typename NodeId>
-const std::unordered_set<NodeId>* Graph<NodeId>::GetNeighbours(const NodeId& id) const {
+const std::set<NodeId>* Graph<NodeId>::GetNeighbours(const NodeId& id) const {
   if (util::ContainsKey(neighbours_, id)) {
     return &neighbours_.at(id);
   }
@@ -119,7 +122,8 @@ const std::unordered_set<NodeId>* Graph<NodeId>::GetNeighbours(const NodeId& id)
 }
 
 template <typename NodeId>
-const std::unordered_set<NodeId>* Graph<NodeId>::GetIncoming(const NodeId& id) const {
+const std::set<NodeId>* Graph<NodeId>::GetIncoming(const NodeId& id) const {
+  if (!IsDirected()) return GetNeighbours(id);
   if (util::ContainsKey(incoming_, id)) {
     return &incoming_.at(id);
   }
@@ -127,7 +131,25 @@ const std::unordered_set<NodeId>* Graph<NodeId>::GetIncoming(const NodeId& id) c
 }
 
 template <typename NodeId>
-GraphBuilder<NodeId>& GraphBuilder<NodeId>::AddEdge(const NodeId& from, const NodeId& to, Edge e) {
+bool Graph<NodeId>::RemoveEdge(const NodeId& from, const NodeId& to) {
+  if(!HasEdge(from, to)) {
+    return false;
+  }
+
+  neighbours_[from].erase(to);
+  edges_.erase(std::make_pair(from, to));
+  if (IsDirected()) {
+    incoming_[to].erase(from);
+  } else {
+    neighbours_[to].erase(from);
+    edges_.erase(std::make_pair(to, from));
+  }
+
+  return true;
+}
+
+template <typename NodeId>
+GraphBuilder<NodeId>& GraphBuilder<NodeId>::AddEdge(const NodeId& from, const NodeId& to, EdgeWeight e) {
   g_.neighbours_[from].insert(to);
   g_.neighbours_[to];
 
