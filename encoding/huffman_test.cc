@@ -8,6 +8,27 @@
 
 namespace huffman {
 
+TEST(empty_huffman) {
+  Huffman huff({}, {});
+  ASSERT_TRUE(huff.is_successful());
+}
+
+TEST(simple_huffman) {
+  Huffman huff({0.5, 0.1, 0.3, 0.4}, {'5', '1', '3', '4'});
+  ASSERT_TRUE(huff.is_successful());
+}
+
+TEST(fail_create_huffman) {
+  {
+    Huffman huff({0.4}, {});
+    ASSERT_FALSE(huff.is_successful());
+  }
+  {
+    Huffman huff({0.4}, {'4', '5'});
+    ASSERT_FALSE(huff.is_successful());
+  }
+}
+
 bool AllPrefixesAreUnique(const std::vector<std::string>& codes) {
   std::set<std::string> prefixes;
   for (const std::string& code : codes) {
@@ -52,7 +73,23 @@ bool CodingIsConsistent(const std::vector<std::string>& codes,
   return true;
 }
 
-TEST(huffman_simple) {
+// Wrapper of new interface to old interface. Useful for legacy tests.
+std::vector<std::string> HuffmanCodes(std::vector<float> distribution) {
+  std::vector<char> tokens;
+  char token = 'a';
+  for (size_t i = 0; i < distribution.size(); ++i, ++token) {
+    tokens.push_back(token);
+  }
+
+  Huffman huff(distribution, tokens);
+  std::vector<std::string> result;
+  for (char t : tokens) {
+    result.push_back(huff.Code(t));
+  }
+  return result;
+}
+
+TEST(huffman_old_simple) {
   std::vector<float> distr = {0.5, 0.1, 0.3, 0.4};
   auto codes = HuffmanCodes(distr);
   ASSERT_EQ(distr.size(), codes.size());

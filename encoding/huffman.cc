@@ -7,70 +7,97 @@
 
 #include "../base/logging.h"
 
-namespace huffman {
+using Node = huffman::Huffman::HuffmanNode;
+using QueueElem = std::pair<float, size_t>;
 
+namespace huffman {
 namespace {
 
-std::vector<std::string> ConstructCodes(const std::vector<int>& index_tree,
-                                        const std::vector<bool>& orientation,
-                                        size_t book_size) {
-  std::vector<std::string> result;
-  for (size_t i = book_size; i < index_tree.size(); ++i) {
-    std::string code;
-    // TODO check off by one error here!
-    for (size_t j = i; j > 1; j = index_tree[j]) {
-      if (orientation[j]) {
-        code.push_back('1');
-      } else  {
-        code.push_back('0');
-      }
-    }
-    std::reverse(code.begin(), code.end());
-    result.push_back(std::move(code));
-  }
-  return result;
+bool IsLeaf(const Node& node) {
+  return node.zero == nullptr && node.one == nullptr;
 }
 
-}  // namespace
+bool IsRoot(const Node& node) {
+  return node.parent == nullptr;
+}
 
-typedef std::pair<float, int> QueueElem;
+bool IsParentConsistent(const Node& node) {
+  if (node.parent == &node) return false;
+  if (node.is_one) return !IsRoot(node) && node.parent->one == &node;
+  return IsRoot(node) || &node == node.parent->zero || &node == node.parent->one;
+}
 
-std::vector<std::string> HuffmanCodes(const std::vector<float>& distribution) {
+bool AreChildrenConsistent(const Node& node) {
+  if (node.zero && node.zero->parent != &node) return false; 
+  if (node.one && node.one->parent != &node) return false; 
+  return true;
+}
+
+bool IsConsistent(const std::vector<Node>& tree, size_t book_size) {
+  if (tree.size() != 2 * book_size - 1) {
+    return false;
+  }
+  for (size_t i = 0; i < tree.size(); ++i) {
+    if (!IsParentConsistent(tree[i])) return false;
+    if (!AreChildrenConsistent(tree[i])) return false;
+
+    bool expect_leaf = i < book_size;
+    if (expect_leaf != IsLeaf(tree[i])) return false;
+
+    bool expect_root = i == tree.size() - 1;
+    if (expect_root != IsRoot(tree[i])) return false;
+  }
+  return true;
+}
+
+// Returns false on failure.
+// If success, `out` will hold 2N-1 elements where the first N elements occupy the leaves of the tree.
+// The char for distribution[i] has its Node at (*out)[i].
+// The last element of out is the root of the tree.
+bool ConstructHuffmanNodes(const std::vector<float>& distribution, std::vector<Node>* out) {
+  if (out == nullptr) {
+    return false;
+  }
+
   const size_t book_size = distribution.size();
   const size_t tree_size = 2 * book_size;
 
-  // Vector of zeroes, will be used to represent our binary tree.
-  std::vector<int> index_tree(tree_size, 0);
-  // Just an easy way to distinguish between left and right child.
-  std::vector<bool> orientation(tree_size, false);
+  // Allocates memory for the binary tree
+  out->resize(tree_size - 1);
 
   // Queue of <weight, tree_index>. Queue should output smallest weight first.
   std::priority_queue<QueueElem, std::vector<QueueElem>, std::greater<QueueElem>> queue;
 
   // Insert all leaves into the queue
-  for (size_t i = 0; i < book_size; ++i) {
-    queue.emplace(distribution[i], i + book_size);
+  for (size_t i = 0; i < distribution.size(); ++i) {
+    queue.emplace(distribution[i], i);
   }
 
-  size_t next_empty_node = book_size - 1;
+  size_t next_empty_node = book_size;
   while(queue.size() > 1) {
     // Create a new parent node for the two trees with current smallest weight.
-    auto lower = queue.top();
+    QueueElem lower = queue.top();
     queue.pop();
-    auto low = queue.top();
+    QueueElem low = queue.top();
     queue.pop();
 
-    index_tree[lower.second] = next_empty_node;
-    index_tree[low.second] = next_empty_node;
-    orientation[lower.second] = true;
-    queue.emplace(lower.first + low.first, next_empty_node);
+    Node* lower_node = &(*out)[lower.second];
+    Node* low_node = &(*out)[low.second];
 
     // Should never happen because we insert one for every two we remove:
-    CHECK(next_empty_node > 0);
-    --next_empty_node;
-  }
+    CHECK(next_empty_node < out->size());
+    Node* parent = &(*out)[next_empty_node];
 
-  return ConstructCodes(index_tree, orientation, book_size);
+    lower_node->parent = parent;
+    low_node->parent = parent;
+    parent->zero = low_node;
+    parent->one = lower_node;
+    lower_node->is_one = true;
+
+    queue.emplace(lower.first + low.first, next_empty_node);
+    ++next_empty_node;
+  }
+  return IsConsistent(*out, book_size);
 }
 
 // Distribution of English letters in percentage.
@@ -102,6 +129,36 @@ static const float kEnglishLetterDistribution[] = {
   1.974,   // y
   0.074,   // z
 };
+
+}  // namespace
+
+Huffman::Huffman(std::vector<float> distribution, std::vector<char> tokens) : distribution_(std::move(distribution)) {
+  if (distribution_.size() != tokens.size()) {
+    successful_ = false;
+    return;
+  }
+  for (size_t i = 0; i < tokens.size(); ++i) {
+    token_map_.emplace(tokens[i], i);
+  }
+  distribution_.push_back(0.0f);  // for Escape token.
+  successful_ = ConstructHuffmanNodes(distribution_, &nodes_);
+}
+
+std::string Huffman::Code(char token) const {
+  auto it = token_map_.find(token);
+  if (it == token_map_.end()) return "";
+
+  std::string result;
+  for (const Node* leaf = &nodes_[it->second]; leaf != nullptr; leaf = leaf->parent) {
+    if (leaf->is_one) {
+      result.push_back('1');
+    } else {
+      result.push_back('0');
+    }
+  }
+  std::reverse(result.begin(), result.end());
+  return result;
+}
 
 std::vector<float> EnglishLetterDistribution() {
   std::vector<float> result;
