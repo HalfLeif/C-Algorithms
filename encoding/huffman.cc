@@ -130,18 +130,29 @@ static const float kEnglishLetterDistribution[] = {
   0.074,   // z
 };
 
+std::vector<char> VectorFromString(const std::string& str) {
+  std::vector<char> result;
+  for (char c : str) {
+    result.push_back(c);
+  }
+  return result;
+}
+
 }  // namespace
 
-Huffman::Huffman(std::vector<float> distribution, std::vector<char> tokens) : distribution_(std::move(distribution)) {
-  if (distribution_.size() != tokens.size()) {
+Huffman::Huffman(std::vector<float> distribution, const std::string& tokens)
+    : Huffman(std::move(distribution), VectorFromString(tokens)) {}
+
+Huffman::Huffman(std::vector<float> distribution, const std::vector<char>& tokens) {
+  if (distribution.size() != tokens.size()) {
     successful_ = false;
     return;
   }
   for (size_t i = 0; i < tokens.size(); ++i) {
     token_map_.emplace(tokens[i], i);
   }
-  distribution_.push_back(0.0f);  // for Escape token.
-  successful_ = ConstructHuffmanNodes(distribution_, &nodes_);
+  distribution.push_back(0.0f);  // for Escape token.
+  successful_ = ConstructHuffmanNodes(distribution, &nodes_);
 }
 
 std::string Huffman::Code(char token) const {

@@ -9,22 +9,22 @@
 namespace huffman {
 
 TEST(empty_huffman) {
-  Huffman huff({}, {});
+  Huffman huff({}, "");
   ASSERT_TRUE(huff.is_successful());
 }
 
 TEST(simple_huffman) {
-  Huffman huff({0.5, 0.1, 0.3, 0.4}, {'5', '1', '3', '4'});
+  Huffman huff({0.5, 0.1, 0.3, 0.4}, "5134");
   ASSERT_TRUE(huff.is_successful());
 }
 
 TEST(fail_create_huffman) {
   {
-    Huffman huff({0.4}, {});
+    Huffman huff({0.4}, "");
     ASSERT_FALSE(huff.is_successful());
   }
   {
-    Huffman huff({0.4}, {'4', '5'});
+    Huffman huff({0.4}, "45");
     ASSERT_FALSE(huff.is_successful());
   }
 }

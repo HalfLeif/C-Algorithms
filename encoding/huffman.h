@@ -14,7 +14,8 @@ namespace huffman {
 class Huffman {
  public:
   // TODO build error string as member?
-  Huffman(std::vector<float> distribution, std::vector<char> tokens);
+  Huffman(std::vector<float> distribution, const std::vector<char>& tokens);
+  Huffman(std::vector<float> distribution, const std::string& tokens);
 
   // TODO implement deep copy if we want this.
   Huffman(const Huffman&) = delete;
@@ -44,19 +45,9 @@ class Huffman {
   bool successful_;
   std::vector<HuffmanNode> nodes_;
 
-  // Contains one float for each token AND one additional element for the Escape token.
-  // Escape tokens are used to escape characters not present in the token vector.
-  std::vector<float> distribution_;
-
-  // TODO Represent as std::map<char,size_t> instead?
+  // Map of tokens to index in nodes_ and distribution_
   std::map<char,size_t> token_map_;
 };
-
-/*
-// Computes optimal huffman codes as strings of 0 and 1 for the given distribution.
-// Order of output is the same as order of input.
-std::vector<std::string> HuffmanCodes(const std::vector<float>& distribution);
-*/
 
 std::vector<float> EnglishLetterDistribution();
 
