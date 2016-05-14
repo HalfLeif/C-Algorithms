@@ -22,9 +22,14 @@ class Huffman {
 
   bool is_successful() const { return successful_; }
 
-  // Returns empty string for unknown token, otherwise a string of 0 and 1.
-  // Mostly useful for debugging and testing.
+  // Size of known vocabulary. Does not include the Escape character for unknown tokens.
+  size_t Booksize() const { return token_map_.size(); }
+
+  // Returns a string of 0 and 1.
+  // If token was not present in input, will return code for Escape token.
   std::string Code(char token) const;
+
+  std::string EscapeCode() const;
 
   // bool Encode(std::istream* input, std::ostream* output) const;
 
@@ -38,10 +43,12 @@ class Huffman {
     HuffmanNode* parent = nullptr;
     HuffmanNode* zero = nullptr;
     HuffmanNode* one = nullptr;
-    bool is_one = false;
+    bool is_one = false;  // Redundant information but makes encoding slightly faster.
   };
 
  private:
+  std::string CodeInternal(size_t leaf) const;
+
   bool successful_;
   std::vector<HuffmanNode> nodes_;
 

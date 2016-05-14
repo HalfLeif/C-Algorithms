@@ -155,13 +155,10 @@ Huffman::Huffman(std::vector<float> distribution, const std::vector<char>& token
   successful_ = ConstructHuffmanNodes(distribution, &nodes_);
 }
 
-std::string Huffman::Code(char token) const {
-  auto it = token_map_.find(token);
-  if (it == token_map_.end()) return "";
-
+std::string Huffman::CodeInternal(size_t leaf_index) const {
   std::string result;
-  for (const Node* leaf = &nodes_[it->second]; leaf != nullptr; leaf = leaf->parent) {
-    if (leaf->is_one) {
+  for (const Node* node = &nodes_[leaf_index]; !IsRoot(*node); node = node->parent) {
+    if (node->is_one) {
       result.push_back('1');
     } else {
       result.push_back('0');
@@ -169,6 +166,16 @@ std::string Huffman::Code(char token) const {
   }
   std::reverse(result.begin(), result.end());
   return result;
+}
+
+std::string Huffman::EscapeCode() const {
+  return CodeInternal(Booksize());
+}
+
+std::string Huffman::Code(char token) const {
+  auto it = token_map_.find(token);
+  if (it == token_map_.end()) return EscapeCode();
+  return CodeInternal(it->second);
 }
 
 std::vector<float> EnglishLetterDistribution() {

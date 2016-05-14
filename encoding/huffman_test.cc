@@ -114,12 +114,79 @@ TEST(huffman_english) {
   ASSERT_LT(codes[IndexOfLetter('e')].size(), codes[IndexOfLetter('s')].size());
 
   ASSERT_TRUE(CodingIsConsistent(codes, distr)) << codes << distr;
+
+  // For debug:
   /*
+  std::vector<std::pair<std::string, char>> code_char_vec;
+  LOG(INFO) << "\n";
   for (char c = 'a'; c <= 'z'; ++c) {
     size_t i = IndexOfLetter(c);
-    LOG(INFO) << c << ": " << distr[i] << " " << codes[i];
+    LOG(INFO) << "\t" << c << ": " << distr[i] << "\t " << codes[i];
+    code_char_vec.emplace_back(codes[i], c);
+  }
+  std::sort(code_char_vec.begin(), code_char_vec.end(), [](const std::pair<std::string, char>& a,
+                                                           const std::pair<std::string, char>& b) {
+    if (a.first.length() != b.first.length()) return a.first.length() < b.first.length();
+    if (a.first != b.first) return a.first < b.first;
+    return a.second < b.second;
+  });
+  LOG(INFO) << "\n";
+  for (const auto& p : code_char_vec) {
+    size_t i = IndexOfLetter(p.second);
+    LOG(INFO) << "\t" << p.second << ": " << distr[i] << "\t " << p.first;
   }
   */
+}
+
+struct Triple {
+  std::string token = "";
+  float weight = 0.0f;
+  std::string code = "";
+};
+
+void PrintTriple(const Triple& t) {
+  LOG(INFO) << t.token << ": \t" << t.weight << "\t " << t.code;;
+}
+
+void PrintCodes(const Huffman& huff, const std::string& tokens, const std::vector<float>& distribution) {
+  if (tokens.size() != distribution.size() || tokens.size() != huff.Booksize()) {
+    return;
+  }
+  std::vector<Triple> triples;
+  triples.reserve(tokens.size());
+  for (size_t i = 0; i < tokens.size(); ++i) {
+    Triple t;
+    t.token.push_back(tokens[i]);
+    t.weight = distribution[i];
+    t.code = huff.Code(tokens[i]);
+    triples.push_back(std::move(t));
+  }
+  Triple escape;
+  escape.token = "ESC";
+  escape.code = huff.EscapeCode();
+  triples.push_back(std::move(escape));
+
+  LOG(INFO) << "\n";
+  for (const Triple& t : triples) {
+    PrintTriple(t);
+  }
+  
+  std::sort(triples.begin(), triples.end(), [](const Triple& a, const Triple& b){
+    if (a.code.size() != b.code.size()) return a.code.size() < b.code.size();
+    return a.code < b.code;
+  });
+
+  LOG(INFO) << "\n";
+  for (const Triple& t : triples) {
+    PrintTriple(t);
+  }
+}
+
+TEST(huffman_print_english) {
+  auto distr = EnglishLetterDistribution();
+  const std::string tokens = "abcdefghijklmnopqrstuvwxyz";
+  Huffman huff(distr, tokens);
+  PrintCodes(huff, tokens, distr);
 }
 
 }  // namespace huffman
