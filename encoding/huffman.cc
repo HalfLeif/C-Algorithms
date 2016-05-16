@@ -5,10 +5,13 @@
 #include <queue>
 #include <utility>
 
+#include "../base/container_utils.h"
 #include "../base/logging.h"
+#include "../bitwise/bitstream.h"
 
 using Node = huffman::Huffman::HuffmanNode;
 using QueueElem = std::pair<float, size_t>;
+using bitstream::BitOutStreamer;
 
 namespace huffman {
 namespace {
@@ -52,13 +55,15 @@ bool IsConsistent(const std::vector<Node>& tree, size_t book_size) {
 
 // Returns false on failure.
 // If success, `out` will hold 2N-1 elements where the first N elements occupy the leaves of the tree.
-// The char for distribution[i] has its Node at (*out)[i].
+// The unsigned char for distribution[i] has its Node at (*out)[i].
 // The last element of out is the root of the tree.
 bool ConstructHuffmanNodes(const std::vector<float>& distribution, std::vector<Node>* out) {
   if (out == nullptr) {
     return false;
   }
 
+  // Number of known tokens + 1 for Escape:
+  // BookSize == VocabularySize + 1
   const size_t book_size = distribution.size();
   const size_t tree_size = 2 * book_size;
 
@@ -130,9 +135,9 @@ static const float kEnglishLetterDistribution[] = {
   0.074,   // z
 };
 
-std::vector<char> VectorFromString(const std::string& str) {
-  std::vector<char> result;
-  for (char c : str) {
+std::vector<unsigned char> VectorFromString(const std::string& str) {
+  std::vector<unsigned char> result;
+  for (unsigned char c : str) {
     result.push_back(c);
   }
   return result;
@@ -143,7 +148,7 @@ std::vector<char> VectorFromString(const std::string& str) {
 Huffman::Huffman(std::vector<float> distribution, const std::string& tokens)
     : Huffman(std::move(distribution), VectorFromString(tokens)) {}
 
-Huffman::Huffman(std::vector<float> distribution, const std::vector<char>& tokens) {
+Huffman::Huffman(std::vector<float> distribution, const std::vector<unsigned char>& tokens) {
   if (distribution.size() != tokens.size()) {
     successful_ = false;
     return;
@@ -153,6 +158,34 @@ Huffman::Huffman(std::vector<float> distribution, const std::vector<char>& token
   }
   distribution.push_back(0.0f);  // for Escape token.
   successful_ = ConstructHuffmanNodes(distribution, &nodes_);
+}
+
+void AddCodeToBuffer(const Node& node, BitOutStreamer* out) {
+  // Root node should not add to code.
+  if (IsRoot(node)) return;
+  // Add bits of parent first so order is preserved.
+  AddCodeToBuffer(*node.parent, out);
+  out->PushBit(node.is_one);
+}
+
+bool Huffman::Encode(std::istream* input, std::ostream* output) const {
+  if (input == nullptr || output == nullptr) return false;
+
+  BitOutStreamer output_buffer(output);
+  /*
+  unsigned char in_token = '\000';
+  while ((in_token = input->get()) != EOF) {
+  */
+  for (unsigned char in_token = input->get(); !input->eof(); in_token = input->get()) {
+    size_t leaf_index = IndexOfToken(in_token);
+    AddCodeToBuffer(nodes_[leaf_index], &output_buffer);
+    if (!util::ContainsKey(token_map_, in_token)) {
+      // Add original unsigned char after Escape code
+      output_buffer.PushByte(in_token);
+    }
+  }
+  output_buffer.FlushRemaining();
+  return true;
 }
 
 std::string Huffman::CodeInternal(size_t leaf_index) const {
@@ -169,13 +202,32 @@ std::string Huffman::CodeInternal(size_t leaf_index) const {
 }
 
 std::string Huffman::EscapeCode() const {
-  return CodeInternal(Booksize());
+  return CodeInternal(VocabularySize());
 }
 
-std::string Huffman::Code(char token) const {
+size_t Huffman::IndexOfToken(unsigned char token) const {
   auto it = token_map_.find(token);
-  if (it == token_map_.end()) return EscapeCode();
-  return CodeInternal(it->second);
+  if (it == token_map_.end()) return VocabularySize();  // Index of Escape token
+  return it->second;
+}
+
+std::string Huffman::Code(unsigned char token) const {
+  return CodeInternal(IndexOfToken(token));
+}
+
+std::string Huffman::Encoded(unsigned char token) const {
+  if (util::ContainsKey(token_map_, token)) return Code(token);
+
+  std::string encoded = EscapeCode();
+  for (int i = 7; i >= 0; --i) {
+    unsigned char bit_position = 1 << i;
+    if (token & bit_position) {
+      encoded.push_back('1');
+    } else {
+      encoded.push_back('0');
+    }
+  }
+  return encoded;
 }
 
 std::vector<float> EnglishLetterDistribution() {

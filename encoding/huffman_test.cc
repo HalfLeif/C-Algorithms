@@ -11,6 +11,10 @@ namespace huffman {
 TEST(empty_huffman) {
   Huffman huff({}, "");
   ASSERT_TRUE(huff.is_successful());
+
+  // The escape node is also the root... Not necessarily a bad thing...
+  // It means that the encoding operation will just be identity.
+  ASSERT_EMPTY(huff.EscapeCode());
 }
 
 TEST(simple_huffman) {
@@ -29,6 +33,19 @@ TEST(fail_create_huffman) {
   }
 }
 
+TEST(huffman_debug_codes) {
+  Huffman huff({0.5, 0.1, 0.3, 0.4}, "abcd");
+  const std::string escape = huff.EscapeCode();
+  ASSERT_EQ(escape, huff.Code('g'));
+
+  const std::string encoded = huff.Encoded('g');
+  ASSERT_EQ('g', 0x67);  // == 0110 0111
+  ASSERT_EQ(encoded, escape + "0110" + "0111");
+
+  // For non-escaped chars, encoded is just the code itself:
+  ASSERT_EQ(huff.Code('a'), huff.Encoded('a'));
+}
+
 bool AllPrefixesAreUnique(const std::vector<std::string>& codes) {
   std::set<std::string> prefixes;
   for (const std::string& code : codes) {
@@ -37,7 +54,7 @@ bool AllPrefixesAreUnique(const std::vector<std::string>& codes) {
 
   for (const std::string& code : codes) {
     std::string prefix;
-    for (char c : code) {
+    for (unsigned char c : code) {
       prefix.push_back(c);
       if (prefix.size() == code.size()) continue;
       if (util::ContainsKey(prefixes, prefix)) {
@@ -75,15 +92,15 @@ bool CodingIsConsistent(const std::vector<std::string>& codes,
 
 // Wrapper of new interface to old interface. Useful for legacy tests.
 std::vector<std::string> HuffmanCodes(std::vector<float> distribution) {
-  std::vector<char> tokens;
-  char token = 'a';
+  std::vector<unsigned char> tokens;
+  unsigned char token = 'a';
   for (size_t i = 0; i < distribution.size(); ++i, ++token) {
     tokens.push_back(token);
   }
 
   Huffman huff(distribution, tokens);
   std::vector<std::string> result;
-  for (char t : tokens) {
+  for (unsigned char t : tokens) {
     result.push_back(huff.Code(t));
   }
   return result;
@@ -97,7 +114,7 @@ TEST(huffman_old_simple) {
   ASSERT_TRUE(CodingIsConsistent(codes, distr)) << codes << distr;
 }
 
-size_t IndexOfLetter(char c) {
+size_t IndexOfLetter(unsigned char c) {
   CHECK(c >= 'a') << c;
   CHECK(c <= 'z') << c;
   return c - 'a';
@@ -117,21 +134,21 @@ TEST(huffman_english) {
 
   // For debug:
   /*
-  std::vector<std::pair<std::string, char>> code_char_vec;
+  std::vector<std::pair<std::string, unsigned char>> code_unsigned char_vec;
   LOG(INFO) << "\n";
-  for (char c = 'a'; c <= 'z'; ++c) {
+  for (unsigned char c = 'a'; c <= 'z'; ++c) {
     size_t i = IndexOfLetter(c);
     LOG(INFO) << "\t" << c << ": " << distr[i] << "\t " << codes[i];
-    code_char_vec.emplace_back(codes[i], c);
+    code_unsigned char_vec.emplace_back(codes[i], c);
   }
-  std::sort(code_char_vec.begin(), code_char_vec.end(), [](const std::pair<std::string, char>& a,
-                                                           const std::pair<std::string, char>& b) {
+  std::sort(code_unsigned char_vec.begin(), code_unsigned char_vec.end(), [](const std::pair<std::string, unsigned char>& a,
+                                                           const std::pair<std::string, unsigned char>& b) {
     if (a.first.length() != b.first.length()) return a.first.length() < b.first.length();
     if (a.first != b.first) return a.first < b.first;
     return a.second < b.second;
   });
   LOG(INFO) << "\n";
-  for (const auto& p : code_char_vec) {
+  for (const auto& p : code_unsigned char_vec) {
     size_t i = IndexOfLetter(p.second);
     LOG(INFO) << "\t" << p.second << ": " << distr[i] << "\t " << p.first;
   }
@@ -149,7 +166,7 @@ void PrintTriple(const Triple& t) {
 }
 
 void PrintCodes(const Huffman& huff, const std::string& tokens, const std::vector<float>& distribution) {
-  if (tokens.size() != distribution.size() || tokens.size() != huff.Booksize()) {
+  if (tokens.size() != distribution.size() || tokens.size() != huff.VocabularySize()) {
     return;
   }
   std::vector<Triple> triples;
