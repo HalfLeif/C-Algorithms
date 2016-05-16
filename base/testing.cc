@@ -26,6 +26,12 @@ void TestEnvironment::RunAllTests() {
   std::cerr << "Running " << num_tests << " tests...\n";
 
   for (TestInterface* test : tests_) {
+    if (test->IsDisabled()) {
+      --num_tests;
+      std::cerr << COLOR_RED << test->name() << " is disabled!" << COLOR_RESET << "\n";
+      continue;
+    }
+
     std::cerr << test->name() << " started";
     test->Run();
     if(test->HasFailed()) {
